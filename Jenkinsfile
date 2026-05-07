@@ -42,16 +42,31 @@ pipeline {
         stage('Run Parallel Tests') {
             steps {
                 catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                    bat 'pytest -n 4 --html=Reports/report.html --self-contained-html'
+                    bat 'pytest -n 2 --html=Reports/report.html --self-contained-html'
                 }
             }
         }
 
+        // stage('Archive Reports') {
+        //     steps {
+        //         archiveArtifacts artifacts: 'Reports/*', fingerprint: true
+        //         archiveArtifacts artifacts: 'Screenshots/*', fingerprint: true
+        //         archiveArtifacts artifacts: 'Logs/*', fingerprint: true
+        //     }
+        // }
         stage('Archive Reports') {
             steps {
-                archiveArtifacts artifacts: 'Reports/*', fingerprint: true
-                archiveArtifacts artifacts: 'Screenshots/*', fingerprint: true
-                archiveArtifacts artifacts: 'Logs/*', fingerprint: true
+                archiveArtifacts artifacts: 'Reports/*',
+                                fingerprint: true,
+                                allowEmptyArchive: true
+
+                archiveArtifacts artifacts: 'Screenshots/*',
+                                fingerprint: true,
+                                allowEmptyArchive: true
+
+                archiveArtifacts artifacts: 'Logs/*',
+                                fingerprint: true,
+                                allowEmptyArchive: true
             }
         }
     }
