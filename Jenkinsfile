@@ -2,10 +2,11 @@ pipeline {
     agent any
 
     stages {
+
         stage('Checkout Source Code') {
             steps {
                 git branch: 'main',
-                url: 'https://github.com/sathwik774444/capstone_project_pytest.git'
+                    url: 'https://github.com/sathwik774444/capstone_project_pytest.git'
             }
         }
 
@@ -15,6 +16,24 @@ pipeline {
             }
         }
 
+        stage('Create Report Directories') {
+            steps {
+                bat '''
+                if not exist Reports mkdir Reports
+                if not exist Screenshots mkdir Screenshots
+                if not exist Logs mkdir Logs
+                '''
+            }
+        }
+
+        // stage('Run Parallel Tests') {
+        //     steps {
+        //         bat '''
+        //         pytest -n 4 --html=Reports/report.html --self-contained-html
+        //         exit 0
+        //         '''
+        //     }
+        // }
         // stage('Run Parallel Tests') {
         //     steps {
         //         bat 'pytest -n 2 --html=Reports/report.html --self-contained-html'
@@ -31,6 +50,8 @@ pipeline {
         stage('Archive Reports') {
             steps {
                 archiveArtifacts artifacts: 'Reports/*', fingerprint: true
+                archiveArtifacts artifacts: 'Screenshots/*', fingerprint: true
+                archiveArtifacts artifacts: 'Logs/*', fingerprint: true
             }
         }
     }
@@ -38,7 +59,7 @@ pipeline {
     post {
         always {
             publishHTML([
-                allowMissing: false,
+                allowMissing: true,
                 alwaysLinkToLastBuild: true,
                 keepAll: true,
                 reportDir: 'Reports',
