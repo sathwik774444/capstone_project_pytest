@@ -1,0 +1,92 @@
+pipeline {
+    agent any
+
+    environment {
+        REPORTS_DIR = 'Reports'
+        SCREENSHOTS_DIR = 'Screenshots'
+        LOGS_DIR = 'Logs'
+        ALLURE_RESULTS_DIR = 'allure-results'
+    }
+
+    stages {
+        stage('Checkout Source Code') {
+            steps {
+                git 'YOUR_GITHUB_REPO_URL'
+            }
+        }
+
+        stage('Setup Environment') {
+            steps {
+                bat '''
+                    mkdir Reports Screenshots Logs allure-results || echo "Directories already exist"
+                '''
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                bat 'pip install -r requirements.txt'
+            }
+        }
+
+        stage('Run Parallel Tests') {
+            steps {
+                bat '''
+                    pytest -n 4 ^
+                    --html=Reports/report.html ^
+                    --self-contained-html ^
+                    --alluredir=allure-results ^
+                    --junitxml=Reports/test-results.xml ^
+                    -v
+                '''
+            }
+        }
+
+        stage('Archive Artifacts') {
+            steps {
+                archiveArtifacts artifacts: 'Reports/*,Screenshots/*.png,Logs/*.log,allure-results/*', fingerprint: true
+            }
+        }
+    }
+
+    post {
+        always {
+            // Publish HTML Report
+            publishHTML([
+                allowMissing: false,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'Reports',
+                reportFiles: 'report.html',
+                reportName: 'Pytest HTML Report'
+            ])
+            
+            // Publish Test Results
+            publishTestResults testResultsPattern: 'Reports/test-results.xml'
+            
+            // Publish Allure Report (if plugin is installed)
+            script {
+                try {
+                    allure([
+                        includeProperties: false,
+                        jdk: '',
+                        results: [[path: 'allure-results']],
+                        reportBuildPolicy: 'ALWAYS'
+                    ])
+                } catch (Exception e) {
+                    echo "Allure plugin not available or failed: ${e}"
+                }
+            }
+        }
+        
+        success {
+            echo "✅ Pipeline completed successfully!"
+        }
+        
+        failure {
+            echo "❌ Pipeline failed!"
+            // Archive failure artifacts
+            archiveArtifacts artifacts: 'Logs/*.log,Screenshots/*.png', allowEmptyArchive: true
+        }
+    }
+}

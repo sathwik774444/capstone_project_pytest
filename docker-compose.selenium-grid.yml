@@ -1,0 +1,182 @@
+services:
+  # Selenium Hub
+  selenium-hub:
+    image: selenium/hub:4.16.1
+    container_name: selenium-hub
+    ports:
+      - "4442-4444:4444"
+      - "4444:4444"
+    environment:
+      - GRID_MAX_SESSION=16
+      - GRID_BROWSER_TIMEOUT=300
+      - GRID_TIMEOUT=300
+      - GRID_NEW_SESSION_WAIT_TIMEOUT=30000
+      - GRID_THROW_ON_CAPABILITY_NOT_PRESENT=true
+      - GRID_CLEAN_UP_CYCLE=3000
+    networks:
+      - selenium-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Chrome Node 1
+  chrome-node-1:
+    image: selenium/node-chrome:4.16.1
+    container_name: chrome-node-1
+    depends_on:
+      - selenium-hub
+    environment:
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
+      - NODE_MAX_SESSION=4
+      - NODE_MAX_INSTANCES=4
+      - NODE_REGISTER_CYCLE=5000
+      - NODE_POLLING=5000
+      - NODE_UNREGISTER_IF_STILL_DOWN_AFTER=60000
+      - NODE_DOWN_POLLING_INTERVAL=2000
+      - NODE_PROBE_INTERVAL=60000
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - VNC_NO_PASSWORD=1
+    volumes:
+      - /dev/shm:/dev/shm
+    networks:
+      - selenium-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Chrome Node 2
+  chrome-node-2:
+    image: selenium/node-chrome:4.16.1
+    container_name: chrome-node-2
+    depends_on:
+      - selenium-hub
+    environment:
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
+      - NODE_MAX_SESSION=4
+      - NODE_MAX_INSTANCES=4
+      - NODE_REGISTER_CYCLE=5000
+      - NODE_POLLING=5000
+      - NODE_UNREGISTER_IF_STILL_DOWN_AFTER=60000
+      - NODE_DOWN_POLLING_INTERVAL=2000
+      - NODE_PROBE_INTERVAL=60000
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - VNC_NO_PASSWORD=1
+    volumes:
+      - /dev/shm:/dev/shm
+    networks:
+      - selenium-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Firefox Node
+  firefox-node:
+    image: selenium/node-firefox:4.16.1
+    container_name: firefox-node
+    depends_on:
+      - selenium-hub
+    environment:
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
+      - NODE_MAX_SESSION=4
+      - NODE_MAX_INSTANCES=4
+      - NODE_REGISTER_CYCLE=5000
+      - NODE_POLLING=5000
+      - NODE_UNREGISTER_IF_STILL_DOWN_AFTER=60000
+      - NODE_DOWN_POLLING_INTERVAL=2000
+      - NODE_PROBE_INTERVAL=60000
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - VNC_NO_PASSWORD=1
+    volumes:
+      - /dev/shm:/dev/shm
+    networks:
+      - selenium-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Edge Node (optional)
+  edge-node:
+    image: selenium/node-edge:4.16.1
+    container_name: edge-node
+    depends_on:
+      - selenium-hub
+    environment:
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
+      - NODE_MAX_SESSION=2
+      - NODE_MAX_INSTANCES=2
+      - NODE_REGISTER_CYCLE=5000
+      - NODE_POLLING=5000
+      - NODE_UNREGISTER_IF_STILL_DOWN_AFTER=60000
+      - NODE_DOWN_POLLING_INTERVAL=2000
+      - NODE_PROBE_INTERVAL=60000
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - VNC_NO_PASSWORD=1
+    volumes:
+      - /dev/shm:/dev/shm
+    networks:
+      - selenium-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Grid Monitoring (optional)
+  grid-monitor:
+    image: selenium/node-chrome:4.16.1
+    container_name: grid-monitor
+    depends_on:
+      - selenium-hub
+    environment:
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    command: >
+      sh -c "
+        while true; do
+          echo '=== Grid Status ==='
+          curl -s http://selenium-hub:4444/status | jq '.'
+          echo '=== Node Status ==='
+          curl -s http://selenium-hub:4444/status | jq '.value.nodes | length'
+          echo '=== Waiting 30 seconds ==='
+          sleep 30
+        done
+      "
+    networks:
+      - selenium-network
+    restart: unless-stopped
+
+networks:
+  selenium-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+

@@ -1,0 +1,45 @@
+# Test Environment Configuration
+environment:
+  base_url: "https://practice.expandtesting.com"
+  ui_url: "https://practice.expandtesting.com/notes/app/login"
+  api_url: "https://practice.expandtesting.com/notes/api"
+  
+# Browser Configuration
+browser:
+  name: "chrome"
+  headless: false
+  window_size: "1920,1080"
+  implicit_wait: 10
+  explicit_wait: 15
+  
+# Test Data
+test_data:
+  valid_user:
+    username: "sathwikkulkarni123@gmail.com"
+    password: "Capg@123"
+  invalid_user:
+    username: "invalid@gmail.com"
+    password: "invalid@123"
+  note_data:
+    title: "Test Note Title"
+    description: "This is a test note description created by automation test."
+  large_description_data:
+    title: "Large Description Test Note"
+    description: "This is a very long description that exceeds 1500 characters to test the validation functionality of the notes application. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat. This description is specifically designed to test the validation limits of the notes application when dealing with extremely long text inputs that exceed normal character limits and should trigger appropriate validation messages to inform users about input restrictions."
+    
+# API Configuration
+api:
+  timeout: 30
+  retry_count: 3
+  retry_delay: 1
+  
+# Logging Configuration
+logging:
+  level: "WARNING"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+# Reporting Configuration
+reporting:
+  allure_results_dir: "allure-results"
+  screenshots_dir: "screenshots"
+  logs_dir: "logs"

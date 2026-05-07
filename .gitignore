@@ -1,0 +1,314 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+#Pipfile.lock
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# Selenium / Test Automation specific
+# Test reports and artifacts
+Reports/
+reports/
+allure-results/
+allure-report/
+screenshots/
+Screenshots/
+logs/
+Logs/
+artifacts/
+Artifacts/
+test-results/
+test-reports/
+
+# Browser profiles and data
+chrome_profile/
+firefox_profile/
+browser_profiles/
+*.crx
+*.log
+
+# WebDriver executables (if downloaded locally)
+chromedriver*
+geckodriver*
+msedgedriver*
+operadriver*
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows specific
+*.lnk
+*.url
+
+# Jenkins specific
+workspace/
+build/
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+
+# Configuration files with secrets
+config/local_*.yaml
+config/local_*.yml
+config/local_*.json
+secrets.yaml
+secrets.yml
+secrets.json
+*.key
+*.pem
+*.crt
+*.p12
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Node.js (if using any frontend tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Local development
+local/
+dev/
+development/
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Large files that shouldn't be in git
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Python cache files
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv*/
+env*/
+ENV*/
+
+# Test output files
+test_output/
+test_results/
+*.out
+
+# Performance test results
+performance_results/
+benchmark_results/
+
+# API keys and credentials (just in case)
+.env.local
+.env.development
+.env.test
+.env.production
+api_keys.txt
+credentials.txt
+
+# Local configuration overrides
+local_config.py
+local_settings.py
+config.local.py
+
+# Documentation build
+docs/build/
+docs/_build/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Project specific
+# Add any project-specific files or directories here
+# For example:
+# custom_data/
+# local_tests/
