@@ -31,13 +31,21 @@ pipeline {
             steps {
                 script {
                     try {
-                        // Stop any existing containers
-                        bat 'docker-compose down -v'
+                        // Force stop and remove all containers including orphaned ones
+                        bat '''
+                        docker-compose down -v --remove-orphans || true
+                        docker stop selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2 || true
+                        docker rm selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2 || true
+                        docker network prune -f || true
+                        '''
+                        
+                        // Wait a moment for cleanup
+                        bat 'timeout /t 5 /nobreak'
                         
                         // Start Selenium Grid with 6 nodes
                         bat 'docker-compose up -d'
                         
-                        // Wait for Grid to be ready
+                        // Wait for Grid initialization
                         bat 'timeout /t 30 /nobreak'
                         
                         // Check Grid status
@@ -47,6 +55,17 @@ pipeline {
                         
                     } catch (Exception e) {
                         echo "❌ Failed to start Selenium Grid: ${e}"
+                        
+                        // Try to get diagnostic information
+                        bat '''
+                        echo "=== Docker Container Status ==="
+                        docker ps -a
+                        echo "=== Docker Compose Status ==="
+                        docker-compose ps
+                        echo "=== Network Status ==="
+                        docker network ls
+                        '''
+                        
                         currentBuild.result = 'UNSTABLE'
                     }
                 }
@@ -97,8 +116,13 @@ pipeline {
             steps {
                 script {
                     try {
-                        // Stop and clean up Grid containers
-                        bat 'docker-compose down -v'
+                        // Force stop and remove all containers
+                        bat '''
+                        docker-compose down -v --remove-orphans || true
+                        docker stop selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2 || true
+                        docker rm selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2 || true
+                        docker network prune -f || true
+                        '''
                         
                         // Restore local execution configuration
                         bat '''
