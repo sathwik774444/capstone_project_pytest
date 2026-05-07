@@ -4,7 +4,8 @@ pipeline {
     stages {
         stage('Checkout Source Code') {
             steps {
-                git 'https://github.com/sathwik774444/capstone_project_pytest.git'
+                git branch: 'main',
+                url: 'https://github.com/sathwik774444/capstone_project_pytest.git'
             }
         }
 
