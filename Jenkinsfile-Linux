@@ -16,7 +16,7 @@ pipeline {
 
         stage('Run Parallel Tests') {
             steps {
-                sh 'pytest -n 4 --html=Reports/report.html --self-contained-html'
+                sh 'pytest -n 2 --html=Reports/report.html --self-contained-html'
             }
         }
 

@@ -32,7 +32,7 @@ pipeline {
         stage('Run Parallel Tests') {
             steps {
                 bat '''
-                    pytest -n 4 ^
+                    pytest -n 2 ^
                     --html=Reports/report.html ^
                     --self-contained-html ^
                     --alluredir=allure-results ^

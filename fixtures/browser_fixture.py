@@ -37,23 +37,39 @@ class BrowserManager:
         else:
             raise ValueError(f"Unsupported browser: {browser_name}")
     
+    def _is_ci_environment(self):
+        """Detect if running in CI/CD environment."""
+        import os
+        ci_indicators = [
+            'JENKINS_URL', 'JENKINS_HOME', 'CI', 'CONTINUOUS_INTEGRATION',
+            'GITHUB_ACTIONS', 'GITLAB_CI', 'TRAVIS', 'CIRCLECI', 'TEAMCITY_VERSION'
+        ]
+        return any(os.getenv(indicator) for indicator in ci_indicators)
+    
     def _create_chrome_driver(self, headless):
         """Create Chrome WebDriver."""
         options = ChromeOptions()
         
-        if headless:
+        # Auto-detect headless mode for CI/CD environments
+        if headless or self._is_ci_environment():
             options.add_argument("--headless=new")
         
-        options.add_argument("--window-size=1920,1080")
+        # Enhanced stability options - Fix 1: Disable ads/notifications/popups
+        options.add_argument("--disable-notifications")
+        options.add_argument("--disable-popup-blocking")
+        options.add_argument("--disable-infobars")
+        options.add_argument("--disable-extensions")
+        options.add_argument("--disable-gpu")
         options.add_argument("--start-maximized")
+        
+        # Existing stability options
+        options.add_argument("--window-size=1920,1080")
         options.add_argument("--disable-web-security")
         options.add_argument("--allow-running-insecure-content")
-        options.add_argument("--disable-extensions")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         
         # Add options to prevent renderer timeouts
-        options.add_argument("--disable-gpu")
         options.add_argument("--disable-software-rasterizer")
         options.add_argument("--disable-background-timer-throttling")
         options.add_argument("--disable-backgrounding-occluded-windows")

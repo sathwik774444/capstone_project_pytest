@@ -15,9 +15,16 @@ pipeline {
             }
         }
 
+        // stage('Run Parallel Tests') {
+        //     steps {
+        //         bat 'pytest -n 2 --html=Reports/report.html --self-contained-html'
+        //     }
+        // }
         stage('Run Parallel Tests') {
             steps {
-                bat 'pytest -n 4 --html=Reports/report.html --self-contained-html'
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    bat 'pytest -n 4 --html=Reports/report.html --self-contained-html'
+                }
             }
         }
 

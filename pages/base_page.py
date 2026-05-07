@@ -54,11 +54,41 @@ class BasePage:
                 self.logger.error(f"Element not clickable even on retry: {locator} - {retry_error}")
                 raise
     
-    def click_element(self, locator):
-        """Click on element."""
+    def safe_click(self, element):
+        """
+        Advanced Enterprise Solution - Safe click with scroll and JavaScript fallback.
+        Handles advertisement iframe blocking and other click interference issues.
+        """
         try:
+            # Fix 3: Scroll element into view before clicking
+            self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
+            
+            # Fix 4: Add small wait for UI stability
+            import time
+            time.sleep(0.5)
+            
+            # Try normal click first
+            try:
+                element.click()
+                self.logger.info("Element clicked successfully with normal click")
+                return True
+            except Exception as click_error:
+                self.logger.warning(f"Normal click failed: {click_error}, trying JavaScript click")
+                # Fix 6: JavaScript click as fallback
+                self.driver.execute_script("arguments[0].click();", element)
+                self.logger.info("Element clicked successfully with JavaScript click")
+                return True
+                
+        except Exception as e:
+            self.logger.error(f"Safe click failed completely: {e}")
+            raise
+    
+    def click_element(self, locator):
+        """Click on element using enhanced safe_click method."""
+        try:
+            # Fix 2: Use explicit wait before click
             element = self.wait_for_element_clickable(locator)
-            element.click()
+            self.safe_click(element)
             self.logger.info(f"Clicked element: {locator}")
         except Exception as e:
             self.logger.error(f"Failed to click element: {locator} - {e}")
