@@ -26,16 +26,83 @@ class BrowserManager:
         self.driver = None
         
     def create_driver(self, browser_name=None, headless=None):
-        """Create WebDriver instance based on configuration."""
+        """
+        Create driver based on execution mode.
+        Supports:
+        - Local
+        - Selenium Grid
+        """
+
         browser_name = browser_name or env_config.get("browser.name", "chrome")
         headless = headless if headless is not None else env_config.get("browser.headless", False)
-        
+
+        execution_mode = env_config.get("execution.mode", "local")
+
+        self.logger.info(f"Execution Mode: {execution_mode}")
+
+        if execution_mode.lower() == "remote":
+            return self._create_remote_driver(browser_name, headless)
+
         if browser_name.lower() == "chrome":
             return self._create_chrome_driver(headless)
+
         elif browser_name.lower() == "firefox":
             return self._create_firefox_driver(headless)
+
         else:
             raise ValueError(f"Unsupported browser: {browser_name}")
+    
+    def _create_remote_driver(self, browser_name, headless):
+        """Create Remote WebDriver for Selenium Grid."""
+
+        grid_url = env_config.get(
+            "selenium_grid.hub_url",
+            "http://localhost:4444/wd/hub"
+        )
+
+        self.logger.info(f"Connecting to Selenium Grid: {grid_url}")
+
+        if browser_name.lower() == "chrome":
+
+            options = ChromeOptions()
+
+            if headless:
+                options.add_argument("--headless=new")
+
+            options.add_argument("--start-maximized")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-gpu")
+
+            driver = webdriver.Remote(
+                command_executor=grid_url,
+                options=options
+            )
+
+        elif browser_name.lower() == "firefox":
+
+            options = FirefoxOptions()
+
+            if headless:
+                options.add_argument("--headless")
+
+            driver = webdriver.Remote(
+                command_executor=grid_url,
+                options=options
+            )
+
+        else:
+            raise ValueError(f"Unsupported remote browser: {browser_name}")
+
+        driver.implicitly_wait(
+            env_config.get("browser.implicit_wait", 10)
+        )
+
+        driver.set_page_load_timeout(
+            env_config.get("browser.explicit_wait", 30)
+        )
+
+        return driver
     
     def _is_ci_environment(self):
         """Detect if running in CI/CD environment."""

@@ -4,13 +4,20 @@ environment:
   ui_url: "https://practice.expandtesting.com/notes/app/login"
   api_url: "https://practice.expandtesting.com/notes/api"
   
+# Execution Configuration
+execution:
+  mode: "remote"   # local or remote
+
+# Selenium Grid Configuration
+selenium_grid:
+  hub_url: "http://localhost:4444/wd/hub"
+
 # Browser Configuration
 browser:
   name: "chrome"
   headless: false
-  window_size: "1920,1080"
   implicit_wait: 10
-  explicit_wait: 15
+  explicit_wait: 30
   
 # Test Data
 test_data:

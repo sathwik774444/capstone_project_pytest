@@ -22,27 +22,6 @@ from browser_fixture import browser, wait, take_screenshot
 sys.path.insert(0, str(project_root / "utils"))
 from allure_utils import allure_reporter
 
-def pytest_addoption(parser):
-    """Add custom command line options for Selenium Grid."""
-    parser.addoption(
-        "--use-grid",
-        action="store_true",
-        default=False,
-        help="Enable Selenium Grid for distributed test execution"
-    )
-    parser.addoption(
-        "--selenium-grid-url",
-        action="store",
-        default="http://localhost:4444",
-        help="Selenium Grid URL (default: http://localhost:4444)"
-    )
-    parser.addoption(
-        "--cloud-provider",
-        action="store",
-        choices=["browserstack", "saucelabs", "none"],
-        default="none",
-        help="Cloud provider for test execution"
-    )
 
 
 # Configure logging at the session level
@@ -136,69 +115,18 @@ def logger():
 
 
 @pytest.fixture(scope="function")
-def grid_browser(request):
-    """
-    WebDriver fixture for Selenium Grid execution.
-    Automatically switches between local and Grid execution based on configuration.
-    """
-    driver = None
-    
-    try:
-        # Check execution mode
-        use_grid = request.config.getoption("--use-grid")
-        cloud_provider = request.config.getoption("--cloud-provider")
-        
-        if cloud_provider != "none":
-            # Cloud execution
-            try:
-                from selenium_grid_config import create_cloud_grid_driver
-                driver = create_cloud_grid_driver(
-                    cloud_provider=cloud_provider,
-                    browser_name="chrome"
-                )
-                print(f"☁️  Using {cloud_provider} for test execution")
-            except ImportError:
-                print("❌ selenium_grid_config not found, falling back to local execution")
-                from fixtures.browser_fixture import BrowserManager
-                browser_manager = BrowserManager()
-                driver = browser_manager.create_driver()
-        elif use_grid:
-            # Selenium Grid execution
-            try:
-                from selenium_grid_config import SeleniumGridConfig
-                grid_config = SeleniumGridConfig()
-                grid_config.enable_grid = True
-                grid_url = request.config.getoption("--selenium-grid-url")
-                grid_config.grid_url = grid_url
-                driver = grid_config.create_grid_driver(browser_name="chrome")
-                print(f"🚀 Using Selenium Grid: {grid_url}")
-            except ImportError:
-                print("❌ selenium_grid_config not found, falling back to local execution")
-                from fixtures.browser_fixture import BrowserManager
-                browser_manager = BrowserManager()
-                driver = browser_manager.create_driver()
-        else:
-            # Local execution - use existing browser fixture
-            from fixtures.browser_fixture import BrowserManager
-            browser_manager = BrowserManager()
-            driver = browser_manager.create_driver()
-        
-        # Set common capabilities
-        driver.set_window_size(1920, 1080)
-        driver.implicitly_wait(10)
-        
-        yield driver
-        
-    except Exception as e:
-        print(f"Error setting up browser: {e}")
-        raise e
-    
-    finally:
-        if driver:
-            try:
-                driver.quit()
-            except Exception as e:
-                print(f"Error quitting browser: {e}")
+def grid_browser():
+
+    from fixtures.browser_fixture import BrowserManager
+
+    browser_manager = BrowserManager()
+
+    driver = browser_manager.create_driver()
+
+    yield driver
+
+    if driver:
+        driver.quit()
 
 
 @pytest.fixture(scope="function")
