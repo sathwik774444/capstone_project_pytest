@@ -27,6 +27,32 @@ pipeline {
             }
         }
 
+        stage('Clean Previous Allure Results') {
+            steps {
+                script {
+                    try {
+                        // Clean up Allure results from previous runs to prevent duplicate test cases
+                        bat '''
+                        if exist allure-results (
+                            echo "Cleaning up previous Allure results..."
+                            rmdir /s /q allure-results
+                            mkdir allure-results
+                            echo "✅ Allure results cleaned successfully"
+                        ) else (
+                            echo "No previous Allure results to clean"
+                        )
+                        '''
+                        
+                        echo "✅ Allure cleanup completed"
+                        
+                    } catch (Exception e) {
+                        echo "⚠️ Failed to clean Allure results: ${e}"
+                        // Don't fail the build for cleanup issues
+                    }
+                }
+            }
+        }
+
         stage('Start Selenium Grid') {
             steps {
                 script {
@@ -69,24 +95,24 @@ pipeline {
             }
         }
 
-        stage('Configure Remote Execution') {
-            steps {
-                script {
-                    try {
-                        // Update config.yaml for remote execution
-                        bat '''
-                        powershell -Command "(Get-Content config\\config.yaml) -replace 'mode: \\"local\\"', 'mode: \\"remote\\"' | Set-Content config\\config.yaml"
-                        '''
+        // stage('Configure Remote Execution') {
+        //     steps {
+        //         script {
+        //             try {
+        //                 // Update config.yaml for remote execution
+        //                 bat '''
+        //                 powershell -Command "(Get-Content config\\config.yaml) -replace 'mode: \\"local\\"', 'mode: \\"remote\\"' | Set-Content config\\config.yaml"
+        //                 '''
                         
-                        echo "✅ Configuration updated for Selenium Grid execution"
+        //                 echo "✅ Configuration updated for Selenium Grid execution"
                         
-                    } catch (Exception e) {
-                        echo "❌ Failed to configure remote execution: ${e}"
-                        currentBuild.result = 'UNSTABLE'
-                    }
-                }
-            }
-        }
+        //             } catch (Exception e) {
+        //                 echo "❌ Failed to configure remote execution: ${e}"
+        //                 currentBuild.result = 'UNSTABLE'
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Run Parallel Tests on Grid') {
             steps {
@@ -155,12 +181,37 @@ pipeline {
 
         stage('Generate Allure Report') {
             steps {
-                allure([
-                    includeProperties: false,
-                    jdk: '',
-                    results: [[path: 'allure-results']],
-                    commandline: 'Allure'
-                ])
+                script {
+                    try {
+                        // Verify Allure results before generating report
+                        bat '''
+                        if exist allure-results (
+                            echo "Allure results found. Counting result files..."
+                            dir /b allure-results | find /c "*.json" > temp_count.txt
+                            set /p result_count=<temp_count.txt
+                            echo "Found %result_count% Allure result files"
+                            del temp_count.txt
+                        ) else (
+                            echo "⚠️ No Allure results found to generate report"
+                            exit /b 1
+                        )
+                        '''
+                        
+                        // Generate Allure report
+                        allure([
+                            includeProperties: false,
+                            jdk: '',
+                            results: [[path: 'allure-results']],
+                            commandline: 'Allure'
+                        ])
+                        
+                        echo "✅ Allure report generated successfully"
+                        
+                    } catch (Exception e) {
+                        echo "❌ Failed to generate Allure report: ${e}"
+                        currentBuild.result = 'UNSTABLE'
+                    }
+                }
             }
         }
     }
