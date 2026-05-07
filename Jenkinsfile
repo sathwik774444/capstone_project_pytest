@@ -69,6 +69,16 @@ pipeline {
                                 allowEmptyArchive: true
             }
         }
+
+        stage('Generate Allure Report') {
+            steps {
+                allure([
+                    includeProperties: false,
+                    jdk: '',
+                    results: [[path: 'allure-results']]
+                ])
+            }
+        }
     }
 
     post {
