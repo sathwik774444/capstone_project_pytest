@@ -31,42 +31,39 @@ pipeline {
             steps {
                 script {
                     try {
-                        // Force stop and remove all containers including orphaned ones
+
                         bat '''
-                        docker-compose down -v --remove-orphans || true
-                        docker stop selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2 || true
-                        docker rm selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2 || true
-                        docker network prune -f || true
+                        docker compose down -v --remove-orphans
+                        docker stop selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2
+                        docker rm selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2
+                        docker network prune -f
                         '''
-                        
-                        // Wait a moment for cleanup
-                        bat 'timeout /t 5 /nobreak'
-                        
-                        // Start Selenium Grid with 6 nodes
-                        bat 'docker-compose up -d'
-                        
-                        // Wait for Grid initialization
-                        bat 'timeout /t 30 /nobreak'
-                        
-                        // Check Grid status
-                        bat 'curl -f http://localhost:4444/status || exit /b 1'
-                        
-                        echo "✅ Selenium Grid started successfully with 6 nodes"
-                        
+
+                        // Wait for cleanup
+                        bat 'ping 127.0.0.1 -n 6 > nul'
+
+                        // Start Grid
+                        bat 'docker compose up -d'
+
+                        // Wait for Grid startup
+                        bat 'ping 127.0.0.1 -n 31 > nul'
+
+                        // Verify Grid
+                        bat 'curl -f http://localhost:4444/status'
+
+                        echo "✅ Selenium Grid started successfully"
+
                     } catch (Exception e) {
+
                         echo "❌ Failed to start Selenium Grid: ${e}"
-                        
-                        // Try to get diagnostic information
+
                         bat '''
-                        echo "=== Docker Container Status ==="
                         docker ps -a
-                        echo "=== Docker Compose Status ==="
-                        docker-compose ps
-                        echo "=== Network Status ==="
-                        docker network ls
+                        docker compose ps
                         '''
-                        
-                        currentBuild.result = 'UNSTABLE'
+
+                        currentBuild.result = 'FAILURE'
+                        throw e
                     }
                 }
             }
@@ -118,10 +115,10 @@ pipeline {
                     try {
                         // Force stop and remove all containers
                         bat '''
-                        docker-compose down -v --remove-orphans || true
-                        docker stop selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2 || true
-                        docker rm selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2 || true
-                        docker network prune -f || true
+                        docker compose down -v --remove-orphans
+                        docker stop selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2
+                        docker rm selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2
+                        docker network prune -f
                         '''
                         
                         // Restore local execution configuration

@@ -59,14 +59,19 @@ docker-compose up -d
 
 The updated Jenkinsfile now includes robust cleanup:
 
-### Enhanced Cleanup Commands
+### Enhanced Cleanup Commands (Windows Jenkins Compatible)
 ```bash
 # Force stop and remove all containers including orphaned ones
-docker-compose down -v --remove-orphans || true
-docker stop selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2 || true
-docker rm selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2 || true
-docker network prune -f || true
+docker compose down -v --remove-orphans
+docker stop selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2
+docker rm selenium-hub chrome-node-1 chrome-node-2 chrome-node-3 chrome-node-4 firefox-node-1 firefox-node-2
+docker network prune -f
 ```
+
+### Jenkins-Specific Fixes
+- **Replaced**: `timeout /t 30 /nobreak` → `ping 127.0.0.1 -n 31 > nul`
+- **Replaced**: `|| true` → No error suppression (proper Windows batch syntax)
+- **Updated**: `docker-compose` → `docker compose` (modern Docker syntax)
 
 ### Error Diagnostics
 ```bash
