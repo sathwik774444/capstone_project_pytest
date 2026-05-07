@@ -95,7 +95,7 @@ pipeline {
                         try {
                             // Run tests in parallel using all 6 Grid nodes
                             bat '''
-                            pytest -v -n 6 --dist=loadscope --html=Reports/report.html --self-contained-html --alluredir=allure-results
+                            pytest -v -n 4 --dist=loadscope --html=Reports/report.html --self-contained-html --alluredir=allure-results
                             '''
                             
                             echo "✅ Parallel tests completed on Selenium Grid"
