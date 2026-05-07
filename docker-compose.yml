@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+
+  # Selenium Grid Hub
+  selenium-hub:
+    image: selenium/hub:4.16.1
+    container_name: selenium-hub
+
+    ports:
+      - "4442:4442"
+      - "4443:4443"
+      - "4444:4444"
+
+    environment:
+      - GRID_MAX_SESSION=16
+      - GRID_BROWSER_TIMEOUT=300
+      - GRID_TIMEOUT=300
+
+    networks:
+      - selenium-network
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4444/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+    restart: unless-stopped
+
+  # Chrome Node 1
+  chrome-node-1:
+    image: selenium/node-chrome:4.16.1
+    container_name: chrome-node-1
+
+    depends_on:
+      - selenium-hub
+
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=4
+
+    shm_size: 2gb
+
+    networks:
+      - selenium-network
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+    restart: unless-stopped
+
+  # Chrome Node 2
+  chrome-node-2:
+    image: selenium/node-chrome:4.16.1
+    container_name: chrome-node-2
+
+    depends_on:
+      - selenium-hub
+
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=4
+
+    shm_size: 2gb
+
+    networks:
+      - selenium-network
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+    restart: unless-stopped
+
+  # Firefox Node
+  firefox-node:
+    image: selenium/node-firefox:4.16.1
+    container_name: firefox-node
+
+    depends_on:
+      - selenium-hub
+
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=4
+
+    shm_size: 2gb
+
+    networks:
+      - selenium-network
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+    restart: unless-stopped
+
+  # Edge Node
+  edge-node:
+    image: selenium/node-edge:4.16.1
+    container_name: edge-node
+
+    depends_on:
+      - selenium-hub
+
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=2
+
+    shm_size: 2gb
+
+    networks:
+      - selenium-network
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+    restart: unless-stopped
+
+networks:
+  selenium-network:
+    driver: bridge
