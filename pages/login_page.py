@@ -2,27 +2,44 @@
 
 from selenium.webdriver.common.by import By
 from .base_page import BasePage
+from utils.agentic import Agentic
 import allure
 
 
 class LoginPage(BasePage):
     """Page object for login page."""
     
-    # Locators
+    # Primary Locators
     BASE_LOGIN_BUTTON = (By.CSS_SELECTOR, "a[href='/notes/app/login']")
     EMAIL_INPUT = (By.ID, "email")
-    # EMAIL_INPUT = (By.CSS_SELECTOR, "input[data-testid='login-email']")
     PASSWORD_INPUT = (By.ID, "password")
-    # PASSWORD_INPUT = (By.CSS_SELECTOR, "input[data-testid='login-password']")
     LOGIN_BUTTON = (By.CSS_SELECTOR, "button[data-testid='login-submit']")
     LOGIN_FORM = (By.TAG_NAME, "form")
     ERROR_MESSAGE = (By.CSS_SELECTOR, "div[data-testid='alert-message']")
-    # ERROR_MESSAGE = (By.CSS_SELECTOR, ".alert-danger")
     EMAIL_VALIDATION = (By.CSS_SELECTOR, "div.invalid-feedback")
+    
+    # Self-Healing Alternative Locators
+    EMAIL_INPUT_HEALING = [
+        (By.ID, "email"),
+        (By.NAME, "email"),
+        (By.CSS_SELECTOR, "input[data-testid='login-email']")
+    ]
+    
+    PASSWORD_INPUT_HEALING = [
+        (By.ID, "password"),
+        (By.NAME, "password"),
+        (By.CSS_SELECTOR, "input[data-testid='login-password']")
+    ]
+    
+    LOGIN_BUTTON_HEALING = [
+        (By.CSS_SELECTOR, "button[data-testid='login-submit']"),
+        (By.XPATH, "//button[contains(text(),'Login')]")
+    ]
     
     def __init__(self, driver):
         """Initialize LoginPage with WebDriver instance."""
         super().__init__(driver)
+        self.agentic = Agentic(driver)
     
     def navigate_to_login(self):
         """Navigate to login page."""
@@ -105,84 +122,193 @@ class LoginPage(BasePage):
                     raise
     
     def login(self, username, password):
-        """Perform login with given credentials."""
+        """Perform login with given credentials using intelligent waiting system."""
         with allure.step(f"Login with username: {username}"):
-            # Wait for login form to be ready
+            # Wait for login form to be ready using adaptive wait
             self.wait_for_login_page_load()
             
-            # Enter email
-            self.enter_email(username)
+            # Wait for page stability before entering credentials
+            self.agentic.smart_wait_for_page_stability(stability_duration=1, max_wait=10)
             
-            # Enter password
-            self.enter_password(password)
+            # Enter email with progress tracking
+            with allure.step("Enter email with intelligent wait"):
+                self.agentic.wait_with_progress_tracking(self.EMAIL_INPUT, timeout=15)
+                self.enter_email(username)
+            
+            # Enter password with progress tracking
+            with allure.step("Enter password with intelligent wait"):
+                self.agentic.wait_with_progress_tracking(self.PASSWORD_INPUT, timeout=15)
+                self.enter_password(password)
             
             # Click login button with fallback
             self.click_login_button()
             
-            # Wait for page to process
-            self.wait_for_page_load()
+            # Use intelligent wait for login completion
+            with allure.step("Wait for login completion with intelligent indicators"):
+                result = self.agentic.intelligent_wait_for_login_completion(timeout=30)
+                
+                # Log the result for debugging
+                self.logger.info(f"Login completion result: {result['status']} - {result['details']}")
+                
+                # Attach result to Allure report
+                allure.attach(
+                    f"Login Status: {result['status']}\nIndicator: {result['indicator_found']}\nDetails: {result['details']}",
+                    name="Intelligent Login Completion Result",
+                    attachment_type=allure.attachment_type.TEXT
+                )
+                
+                # Wait for page stability after login
+                if result['status'] == 'success':
+                    self.agentic.smart_wait_for_page_stability(stability_duration=2, max_wait=15)
+    
+    def login_with_retry(self, username, password):
+        """
+        Perform login with auto-retry mechanism for flaky UI.
+        Uses configuration from config.yaml for retry count and delay.
+        """
+        with allure.step(f"Login with retry mechanism for username: {username}"):
+            try:
+                # Use the agentic retry mechanism
+                return self.agentic.retry_login(self._perform_login, username, password)
+            except Exception as e:
+                self.logger.error(f"Login with retry failed: {e}")
+                raise
+    
+    def login_with_decision_based_retry(self, username, password, max_attempts=5):
+        """
+        Perform login with decision-based retry logic that analyzes failures and adjusts strategy.
+        
+        Args:
+            username: Login username
+            password: Login password
+            max_attempts: Maximum number of retry attempts
+            
+        Returns:
+            dict: Login result with detailed execution information
+        """
+        with allure.step(f"Decision-based retry login for username: {username}"):
+            try:
+                # Use the decision-based retry mechanism
+                result = self.agentic.execute_decision_based_retry(
+                    self._perform_login_with_adjustments, 
+                    username, 
+                    password, 
+                    max_attempts
+                )
+                
+                # Log the result
+                if result['success']:
+                    self.logger.info(f"Decision-based login successful on attempt {result['attempt']}")
+                    allure.attach(
+                        f"Login successful!\nAttempt: {result['attempt']}\nTime: {result['execution_time']:.2f}s\nAdjustments: {result['final_adjustments']}",
+                        name="Decision-Based Login Success",
+                        attachment_type=allure.attachment_type.TEXT
+                    )
+                else:
+                    self.logger.error(f"Decision-based login failed after {result['attempts_made']} attempts")
+                    allure.attach(
+                        f"Login failed!\nAttempts: {result['attempts_made']}\nLast error: {result['last_exception']}\nExecution log: {result['execution_log']}",
+                        name="Decision-Based Login Failure",
+                        attachment_type=allure.attachment_type.TEXT
+                    )
+                
+                return result
+                
+            except Exception as e:
+                self.logger.error(f"Decision-based login failed with exception: {e}")
+                raise
+    
+    def _perform_login_with_adjustments(self, username, password):
+        """
+        Internal method that performs login with intelligent adjustments.
+        This method is called by the decision-based retry system.
+        """
+        # Apply any intelligent adjustments before login
+        adjustments = getattr(self, '_current_adjustments', {})
+        if adjustments:
+            self.agentic.apply_intelligent_adjustments(adjustments)
+        
+        # Perform the actual login using the enhanced login method
+        self.login(username, password)
+        
+        # Check if login was successful
+        return not self.is_error_message_displayed()
+    
+    def _perform_login(self, username, password):
+        """
+        Internal method to perform the actual login operation.
+        Returns True if successful, False if error message is displayed.
+        """
+        try:
+            # Use the existing login method to perform the login operation
+            self.login(username, password)
+            
+            # Check if login was successful (no error message)
+            if not self.is_error_message_displayed():
+                self.logger.info("Login completed successfully - no error message detected")
+                return True
+            else:
+                self.logger.warning("Login failed - error message detected")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Login operation failed: {e}")
+            raise
     
     def enter_email(self, email):
-        """Enter email in email input field."""
+        """Enter email in email input field with self-healing capability."""
         with allure.step(f"Enter email: {email}"):
-            self.type_text(self.EMAIL_INPUT, email)
+            try:
+                # Attempt with primary locator first
+                self.type_text(self.EMAIL_INPUT, email)
+                self.logger.info(f"Email entered successfully using primary locator: {self.EMAIL_INPUT}")
+            except Exception as primary_error:
+                self.logger.warning(f"Primary email locator failed: {primary_error}")
+                try:
+                    # Fallback to self-healing locators
+                    self.agentic.intelligent_type(self.EMAIL_INPUT_HEALING, email)
+                    self.logger.info("Email entered successfully using self-healing locators")
+                except Exception as healing_error:
+                    self.logger.error(f"All email locators failed - Primary: {primary_error}, Healing: {healing_error}")
+                    raise Exception(f"Unable to enter email using any locator strategy. Primary error: {primary_error}, Healing error: {healing_error}")
     
     def enter_password(self, password):
-        """Enter password in password input field."""
+        """Enter password in password input field with self-healing capability."""
         with allure.step("Enter password"):
-            self.type_text(self.PASSWORD_INPUT, password)
+            try:
+                # Attempt with primary locator first
+                self.type_text(self.PASSWORD_INPUT, password)
+                self.logger.info(f"Password entered successfully using primary locator: {self.PASSWORD_INPUT}")
+            except Exception as primary_error:
+                self.logger.warning(f"Primary password locator failed: {primary_error}")
+                try:
+                    # Fallback to self-healing locators
+                    self.agentic.intelligent_type(self.PASSWORD_INPUT_HEALING, password)
+                    self.logger.info("Password entered successfully using self-healing locators")
+                except Exception as healing_error:
+                    self.logger.error(f"All password locators failed - Primary: {primary_error}, Healing: {healing_error}")
+                    raise Exception(f"Unable to enter password using any locator strategy. Primary error: {primary_error}, Healing error: {healing_error}")
     
     def click_login_button(self):
-        """Click login button."""
+        """Click login button with self-healing capability."""
         with allure.step("Click login button"):
-            # Try regular click first with shorter timeout
             try:
+                # Attempt with primary locator first
                 element = self.wait_for_element_clickable(self.LOGIN_BUTTON, timeout=10)
                 element.click()
-                self.logger.info("Successfully clicked login button with regular click")
-            except Exception as e:
-                if "timeout" in str(e).lower() and "renderer" in str(e).lower():
-                    self.logger.warning(f"Chrome renderer timeout detected: {e}, handling timeout")
-                    self.handle_renderer_timeout()
-                    # Retry after handling timeout
-                    try:
-                        element = self.wait_for_element_clickable(self.LOGIN_BUTTON, timeout=5)
-                        element.click()
-                        self.logger.info("Successfully clicked login button after timeout handling")
-                        return
-                    except Exception as retry_error:
-                        self.logger.error(f"Retry also failed: {retry_error}")
-                
-                self.logger.warning(f"Regular login click failed: {e}, trying JavaScript click")
+                self.logger.info(f"Login button clicked successfully using primary locator: {self.LOGIN_BUTTON}")
+            except Exception as primary_error:
+                self.logger.warning(f"Primary login button locator failed: {primary_error}")
                 try:
-                    # If regular click fails, try JavaScript click with shorter wait
-                    from selenium.webdriver.support.ui import WebDriverWait
-                    from selenium.webdriver.support import expected_conditions as EC
-                    short_wait = WebDriverWait(self.driver, 5)
-                    element = short_wait.until(EC.element_to_be_clickable(self.LOGIN_BUTTON))
-                    self.driver.execute_script("arguments[0].click();", element)
-                    self.logger.info("Successfully clicked login button with JavaScript click")
-                except Exception as js_error:
-                    self.logger.error(f"JavaScript login click also failed: {js_error}")
-                    # Try form submission as last resort
-                    try:
-                        # Try to find form with shorter timeout
-                        from selenium.webdriver.support.ui import WebDriverWait
-                        from selenium.webdriver.support import expected_conditions as EC
-                        short_wait = WebDriverWait(self.driver, 3)
-                        form = short_wait.until(EC.presence_of_element_located((By.TAG_NAME, "form")))
-                        self.driver.execute_script("arguments[0].submit();", form)
-                        self.logger.info("Submitted login form as last resort")
-                    except Exception as form_error:
-                        self.logger.error(f"Form submission also failed: {form_error}")
-                        # Final fallback: try pressing Enter on password field
-                        try:
-                            password_field = self.driver.find_element(*self.PASSWORD_INPUT)
-                            password_field.send_keys("\n")
-                            self.logger.info("Pressed Enter on password field as final fallback")
-                        except Exception as enter_error:
-                            self.logger.error(f"Enter key fallback also failed: {enter_error}")
-                            raise
+                    # Fallback to self-healing locators
+                    success = self.agentic.intelligent_click(self.LOGIN_BUTTON_HEALING, retries=2)
+                    if success:
+                        self.logger.info("Login button clicked successfully using self-healing locators")
+                    else:
+                        raise Exception("Self-healing click returned False")
+                except Exception as healing_error:
+                    self.logger.error(f"All login button locators failed - Primary: {primary_error}, Healing: {healing_error}")
+                    raise Exception(f"Unable to click login button using any locator strategy. Primary error: {primary_error}, Healing error: {healing_error}")
     
     def wait_for_login_completion(self):
         """Wait for login completion (either success or error)."""
@@ -210,6 +336,39 @@ class LoginPage(BasePage):
             
             # Wait for page to process and check for error message
             return self.wait_for_error_message()
+    
+    def incorrect_login_with_retry(self, username, password):
+        """
+        Perform incorrect login with auto-retry mechanism for flaky UI.
+        Returns True if error message appears after successful retry.
+        """
+        with allure.step(f"Incorrect login with retry mechanism for username: {username}"):
+            try:
+                # Use the agentic retry mechanism
+                return self.agentic.retry_login(self._perform_incorrect_login, username, password)
+            except Exception as e:
+                self.logger.error(f"Incorrect login with retry failed: {e}")
+                raise
+    
+    def _perform_incorrect_login(self, username, password):
+        """
+        Internal method to perform the actual incorrect login operation.
+        Returns True if error message is displayed (expected for invalid credentials).
+        """
+        try:
+            # Use the existing incorrect_login method to perform the login operation
+            has_error = self.incorrect_login(username, password)
+            
+            if has_error:
+                self.logger.info("Incorrect login test passed - error message detected as expected")
+                return True
+            else:
+                self.logger.warning("Incorrect login test failed - no error message detected")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Incorrect login operation failed: {e}")
+            raise
     
     def wait_for_error_message(self):
         """Wait for error message to appear and return True if displayed."""
@@ -304,22 +463,65 @@ class LoginPage(BasePage):
     
     
     def wait_for_login_page_load(self):
-        """Wait for login page to fully load."""
-        with allure.step("Wait for login page to load"):
-            self.wait_for_element(self.LOGIN_FORM)
-            self.wait_for_element(self.EMAIL_INPUT)
-            self.wait_for_element(self.PASSWORD_INPUT)
-            self.wait_for_element(self.LOGIN_BUTTON)
+        """Wait for login page to fully load with intelligent waiting system."""
+        with allure.step("Wait for login page to load with intelligent waiting"):
+            try:
+                # Wait for page stability first
+                self.agentic.smart_wait_for_page_stability(stability_duration=1, max_wait=10)
+                
+                # Use adaptive wait for primary locators
+                self.agentic.adaptive_wait_for_element(self.LOGIN_FORM, base_timeout=5, max_timeout=15)
+                self.agentic.adaptive_wait_for_element(self.EMAIL_INPUT, base_timeout=5, max_timeout=15)
+                self.agentic.adaptive_wait_for_element(self.PASSWORD_INPUT, base_timeout=5, max_timeout=15)
+                self.agentic.adaptive_wait_for_element(self.LOGIN_BUTTON, base_timeout=5, max_timeout=15)
+                
+                self.logger.info("Login page loaded successfully using adaptive waiting")
+                
+                # Additional stability check
+                if self.agentic.smart_wait_for_page_stability(stability_duration=1, max_wait=5):
+                    self.logger.info("Login page stability confirmed")
+                
+            except Exception as primary_error:
+                self.logger.warning(f"Primary intelligent page load wait failed: {primary_error}")
+                try:
+                    # Fallback to self-healing with intelligent waiting
+                    self.agentic.adaptive_wait_for_element(self.LOGIN_FORM, base_timeout=3, max_timeout=10)
+                    self.agentic.wait_with_progress_tracking(self.EMAIL_INPUT_HEALING[0], timeout=10)
+                    self.agentic.wait_with_progress_tracking(self.PASSWORD_INPUT_HEALING[0], timeout=10)
+                    self.agentic.wait_with_progress_tracking(self.LOGIN_BUTTON_HEALING[0], timeout=10)
+                    
+                    # Final stability check
+                    self.agentic.smart_wait_for_page_stability(stability_duration=1, max_wait=5)
+                    
+                    self.logger.info("Login page loaded successfully using intelligent self-healing")
+                except Exception as healing_error:
+                    self.logger.error(f"Login page load failed with all intelligent strategies - Primary: {primary_error}, Healing: {healing_error}")
+                    raise Exception(f"Unable to wait for login page load using any intelligent locator strategy. Primary error: {primary_error}, Healing error: {healing_error}")
     
     def get_page_title(self):
         """Get login page title."""
         return super().get_page_title()
     
     def is_login_page_loaded(self):
-        """Check if login page is loaded successfully."""
+        """Check if login page is loaded successfully with self-healing capability."""
         try:
-            return (self.is_element_visible(self.EMAIL_INPUT) and 
-                   self.is_element_visible(self.PASSWORD_INPUT) and 
-                   self.is_element_visible(self.LOGIN_BUTTON))
-        except Exception:
-            return False
+            # Try primary locators first
+            if (self.is_element_visible(self.EMAIL_INPUT) and 
+                self.is_element_visible(self.PASSWORD_INPUT) and 
+                self.is_element_visible(self.LOGIN_BUTTON)):
+                self.logger.info("Login page verified using primary locators")
+                return True
+        except Exception as primary_error:
+            self.logger.warning(f"Primary page load verification failed: {primary_error}")
+        
+        try:
+            # Fallback to self-healing locators
+            if (self.agentic.wait_until_visible(self.EMAIL_INPUT_HEALING[0]) and
+                self.agentic.wait_until_visible(self.PASSWORD_INPUT_HEALING[0]) and
+                self.agentic.wait_until_visible(self.LOGIN_BUTTON_HEALING[0])):
+                self.logger.info("Login page verified using self-healing locators")
+                return True
+        except Exception as healing_error:
+            self.logger.error(f"Page load verification failed with all strategies - Primary: {primary_error}, Healing: {healing_error}")
+        
+        return False

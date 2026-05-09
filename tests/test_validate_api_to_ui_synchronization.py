@@ -30,7 +30,7 @@ def test_validate_api_to_ui_synchronization(browser):
     timeout = api_config.get("timeout", 30)
 
     valid_user = env_config.test_data["valid_user"]
-    note_data = env_config.test_data["note_data"]
+    note_data = env_config.test_data["note_data_e2e"]
 
     login_endpoint = f"{api_url}/users/login"
     notes_endpoint = f"{api_url}/notes"
